@@ -3,9 +3,55 @@
 bucket=$1
 filePath=$2
 envFile=$3
-file=$(basename $filePath)
 
-test -e $envFile && . $envFile
+if [ -z $bucket ]
+then
+  echo "Bucket argument required!"
+  echo "Usage: s3put bucket filePath [envfile]"
+  echo
+  exit 1
+fi
+
+if [ -z $filePath ]
+then
+  echo "filePath argument required!"
+  echo "Usage: s3put bucket filePath [envfile]"
+  echo
+  exit 1
+fi
+
+file=$(basename $filePath)
+# If no environment argument is provided, default
+# to a system wide environment located at /etc/s3.env
+test -z $envFile && envFile=/etc/s3.env
+
+if [ -e $envFile ]
+then
+  . $envFile
+else
+  echo "File not found at $envFile!"
+  echo
+  echo "When provided, optional envFile argument must"
+  echo "specify a file with export statements to set"
+  echo "variables for the environment that s3put is run"
+  echo "within!"
+  echo
+  exit 1
+fi
+
+if [ -z $AWS_ACCESS_KEY_ID ]
+then
+  echo "AWS_ACCESS_KEY_ID must be defined in the environment!"
+  echo
+  exit 1
+fi
+
+if [ -z $AWS_SECRET_KEY ]
+then
+  echo "AWS_SECRET_KEY must be defined in the environment!"
+  echo
+  exit 1
+fi
 
 resource="/${bucket}/${file}"
 contentType="application/x-gzip"
